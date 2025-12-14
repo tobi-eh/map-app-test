@@ -2,10 +2,9 @@ import streamlit as st
 import plotly.express as px
 import pandas as pd
 
-# Set page configuration
-st.set_page_config(page_title="My Travel Map", page_icon="🌎", layout="wide")
-
-st.title("🌎 My Travel Tracker")
+# Page config
+st.set_page_config(page_title="Travel Map", page_icon="🌎", layout="wide")
+st.title("🌎 Travel Tracker")
 st.write("Mark the places you have visited to visualize them on the map.")
 
 # -- DATA SETUP --
@@ -19,22 +18,24 @@ us_states = [
 ]
 
 # 2. List of Countries (using ISO-3 code for better mapping, or standard names)
-# Plotly Express's 'gapminder' dataset is a quick way to get country names/ISOs
-all_countries = px.data.gapminder()['country'].unique().tolist()
+# Use Plotly Express's 'gapminder' dataset as a quick way to get country names/ISOs:
+gapminder = px.data.gapminder()
+all_countries = gapminder['country'].unique().tolist()
+europe_countries = gapminder[gapminder['continent'] == 'Europe']['country'].unique().tolist()
 
 # -- SIDEBAR SELECTION --
-map_type = st.sidebar.radio("Select Map Scope", ["USA States", "World Countries"])
+map_type = st.sidebar.radio("Map Scope", ["USA (States)", "Europe", "World"])
 
-if map_type == "USA States":
+if map_type == "USA (States)":
     st.sidebar.header("🇺🇸 Select States Visited")
     # Multi-select for states
     visited_states = st.sidebar.multiselect(
         "Choose states:", 
         options=us_states,
-        default=["MA", "NY", "CA"] # Pre-selected examples
+        default=["MA", "NY"] # Pre-selected examples
     )
     
-    # Create DataFrame for plotting
+    # DataFrame for plotting
     # We create a dataframe with ALL states, and mark 'Visited' as 1 or 0
     df_states = pd.DataFrame({"State": us_states})
     df_states['Visited'] = df_states['State'].apply(lambda x: 1 if x in visited_states else 0)
@@ -48,7 +49,7 @@ if map_type == "USA States":
         color_continuous_scale=["#f0f2f6", "#00cc96"], # Light grey to Green
         range_color=(0, 1),
         scope="usa",
-        title="States I Have Visited",
+        title="",
         hover_name="State",
         hover_data={'Visited': False, 'State': False}
     )
@@ -59,16 +60,16 @@ if map_type == "USA States":
     st.info(f"You have visited **{len(visited_states)}** out of 50 states ({len(visited_states)/50:.1%}).")
 
 
-elif map_type == "World Countries":
+elif map_type == "World" or map_type == "Europe":
     st.sidebar.header("🌍 Select Countries Visited")
     # Multi-select for countries
     visited_countries = st.sidebar.multiselect(
         "Choose countries:", 
-        options=all_countries,
-        default=["United States", "Austria", "Denmark"] # Pre-selected examples
+        options=if map_type=="World": all_countries else: europe_countries,
+        default=["Austria"] # Pre-selected examples
     )
     
-    # Create DataFrame for plotting
+    # DataFrame for plotting
     df_countries = pd.DataFrame({"Country": all_countries})
     df_countries['Visited'] = df_countries['Country'].apply(lambda x: 1 if x in visited_countries else 0)
     
